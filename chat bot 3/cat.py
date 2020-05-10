@@ -4,7 +4,7 @@ import asyncio
 import requests
 
 
-TOKEN = "NzA5MDAxMjM5MjExMjc4Mzc4.Xrfi8w.E5jSVD1Nr1_RqmbJO0wDbwGaffI"
+TOKEN = ""
 bot = commands.Bot(command_prefix="#!")
 
 
