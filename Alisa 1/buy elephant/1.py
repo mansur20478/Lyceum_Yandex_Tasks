@@ -6,6 +6,7 @@ import logging
 import json
 
 app = Flask(__name__)
+run_with_ngrok(app)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,10 +24,19 @@ def main():
             'end_session': False
         }
     }
+    response_rabbit = {
+        'session': request.json['session'],
+        'version': request.json['version'],
+        'response': {
+            'end_session': False
+        }
+    }
 
     handle_dialog(request.json, response)
+    handle_dialog_rabbit(request.json, response_rabbit)
 
     logging.info(f'Response:  {response!r}')
+    logging.info(f'Response_rabbit:  {response_rabbit!r}')
 
     return json.dumps(response)
 
@@ -52,10 +62,42 @@ def handle_dialog(req, res):
         'куплю',
         'покупаю',
         'хорошо',
+        'я покупаю',
+        'я куплю'
+    ]:
+        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+        res['response']['end_session'] = True
+        return
+
+    res['response']['text'] = \
+        f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
+    res['response']['buttons'] = get_suggests(user_id)
+
+
+def handle_dialog_rabbit(req, res):
+    user_id = req['session']['user_id']
+
+    if req['session']['new']:
+        sessionStorage[user_id] = {
+            'suggests': [
+                "Не хочу.",
+                "Не буду.",
+                "Отстань!",
+            ]
+        }
+        res['response']['text'] = 'Привет! Купи кролика!'
+        res['response']['buttons'] = get_suggests(user_id)
+        return
+
+    if req['request']['original_utterance'].lower() in [
+        'ладно',
+        'куплю',
+        'покупаю',
+        'хорошо',
         'Я покупаю',
         'Я покупаю'
     ]:
-        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+        res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
         res['response']['end_session'] = True
         return
 
