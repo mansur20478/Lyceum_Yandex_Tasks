@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+import datetime, random, requests
+from telegram import ReplyKeyboardMarkup
+from telegram.ext import Updater, MessageHandler, Filters
+from telegram.ext import CallbackContext, CommandHandler, ConversationHandler
+
+TOKEN = "822970120:AAG3G4OSG0I1XUqUh45MwkHrEa7PZjb6TeU"
+
+
+def get_coord(city_name):
+    try:
+        url = "https://geocode-maps.yandex.ru/1.x/"
+        params = {
+            "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+            'geocode': city_name,
+            'format': 'json'
+        }
+        response = requests.get(url, params)
+        if not response:
+            text = "Ошибка выполнения запроса:\n"
+            text += response.url + "\n"
+            text += f"Http статус: {response.status_code}  {response.reason}"
+            return text
+        json = response.json()
+        coordinates_str = json['response']['GeoObjectCollection'][
+            'featureMember'][0]['GeoObject']['Point']['pos']
+        return coordinates_str.replace(" ", ",")
+    except BaseException as exc:
+        return None
+
+
+def search(update, context):
+    coord = get_coord(update.message.text)
+    if coord is not None and coord[0] == 'О':
+        update.message.reply_text(coord)
+        return
+    if coord:
+        url = f"http://static-maps.yandex.ru/1.x/?ll={coord}&l=map&pt={coord}"
+        print(url)
+        context.bot.sendPhoto(update.message.chat_id, url, caption=update.message.text)
+    else:
+        update.message.reply_text("Not found")
+
+
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(MessageHandler(Filters.text, search))
+    updater.start_polling()
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()
